@@ -1,0 +1,4285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyShare - Chemistry Learning Platform</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --light: #f9fafb;
+            --dark: #111827;
+            --border: #e5e7eb;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --admin-color: #8b5cf6;
+            --card-bg: #ffffff;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --chemistry-blue: #3b82f6;
+            --chemistry-green: #10b981;
+            --chemistry-purple: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            color: #374151;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a5b4fc;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            height: var(--header-height);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, var(--chemistry-purple) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 3rem;
+            list-style: none;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--secondary);
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, var(--chemistry-purple) 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, var(--chemistry-purple) 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.4);
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, var(--chemistry-purple) 0%, #7c3aed 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 0;
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            box-shadow: 5px 0 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-section {
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: all 0.3s;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            color: var(--chemistry-blue);
+            transform: translateX(5px);
+        }
+
+        .sidebar-link.active {
+            border-left: 4px solid var(--chemistry-blue);
+            font-weight: 600;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+        }
+
+        .content-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Search Box */
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 18px 24px;
+            padding-left: 56px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--card-bg);
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--chemistry-blue);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary);
+            font-size: 1.2rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            color: var(--chemistry-blue);
+        }
+
+        .stat-content h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .stat-content p {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Timetable Table */
+        .timetable-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            background: var(--card-bg);
+        }
+
+        .timetable-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .timetable-table th {
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, #1d4ed8 100%);
+            color: white;
+            padding: 1.2rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .timetable-table th:first-child {
+            border-radius: 12px 0 0 0;
+            min-width: 120px;
+        }
+
+        .timetable-table th:last-child {
+            border-radius: 0 12px 0 0;
+        }
+
+        .timetable-table td {
+            padding: 1rem;
+            border: 1px solid var(--border);
+            vertical-align: top;
+            transition: all 0.3s;
+        }
+
+        .time-cell {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            font-weight: 600;
+            color: var(--dark);
+            text-align: center;
+            font-size: 0.9rem;
+            width: 120px;
+        }
+
+        .class-cell {
+            cursor: pointer;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .class-cell:hover {
+            background: #fafafa;
+        }
+
+        .class-cell.empty {
+            text-align: center;
+            color: var(--secondary);
+            font-style: italic;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(0,0,0,0.02) 10px,
+                rgba(0,0,0,0.02) 20px
+            );
+        }
+
+        .class-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid var(--chemistry-blue);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            height: 100%;
+            transition: all 0.3s;
+        }
+
+        .class-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .class-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .class-subject {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .class-code {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            color: var(--chemistry-blue);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .class-time {
+            font-size: 0.8rem;
+            color: var(--secondary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .class-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .class-detail {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--secondary);
+        }
+
+        .class-detail i {
+            color: var(--chemistry-blue);
+            font-size: 0.9rem;
+        }
+
+        .admin-badge-small {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--chemistry-purple);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Materials Grid */
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .material-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .material-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            border-color: var(--chemistry-blue);
+        }
+
+        .material-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .material-category {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, #1d4ed8 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .material-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .material-subject {
+            color: var(--chemistry-blue);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .material-body {
+            padding: 1.5rem;
+        }
+
+        .material-description {
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        .material-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .material-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .btn-sm {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--chemistry-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .filter-select, .filter-input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .filter-select:focus, .filter-input:focus {
+            outline: none;
+            border-color: var(--chemistry-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Marks Specific Styles */
+        .marks-category {
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid var(--border);
+        }
+
+        .marks-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+        }
+
+        .marks-category-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .marks-category-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .marks-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .marks-stat {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .marks-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .marks-stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .marks-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .marks-table th {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--dark);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .marks-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .marks-table tr:hover {
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        .grade-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .grade-A { background: #10b981; color: white; }
+        .grade-B { background: #3b82f6; color: white; }
+        .grade-C { background: #f59e0b; color: white; }
+        .grade-D { background: #ef4444; color: white; }
+        .grade-F { background: #7f1d1d; color: white; }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.exam { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+        .progress-fill.assignment { background: linear-gradient(90deg, #10b981, #059669); }
+        .progress-fill.quiz { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+        .subject-performance {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .subject-name {
+            min-width: 150px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .subject-grade {
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* Student Performance Styles */
+        .student-performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .student-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .student-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+
+        .student-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .student-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, var(--chemistry-purple) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .student-info h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .student-info p {
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .student-body {
+            padding: 1.5rem;
+        }
+
+        .student-marks {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .student-mark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .mark-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .mark-info p {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .mark-score {
+            text-align: right;
+        }
+
+        .mark-percentage {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .student-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .student-stat {
+            text-align: center;
+        }
+
+        .student-stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--chemistry-blue);
+        }
+
+        .student-stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .comparison-table th {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--dark);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            position: sticky;
+            top: 0;
+        }
+
+        .comparison-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        .student-rank {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .rank-1 { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
+        .rank-2 { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); }
+        .rank-3 { background: linear-gradient(135deg, #d97706 0%, #92400e 100%); }
+        .rank-other { background: var(--border); color: var(--dark); }
+
+        .performance-trend {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .trend-up { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .trend-down { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .trend-stable { background: rgba(156, 163, 175, 0.1); color: var(--secondary); }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(50px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: var(--border);
+            color: var(--dark);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background: var(--card-bg);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--chemistry-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .form-actions .btn {
+            flex: 1;
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .file-upload-area:hover, .file-upload-area.dragover {
+            border-color: var(--chemistry-blue);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+        }
+
+        .file-upload-icon {
+            font-size: 3rem;
+            color: var(--chemistry-blue);
+            margin-bottom: 1rem;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            z-index: 3000;
+            animation: slideInRight 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+
+        .notification.warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        }
+
+        /* Loader */
+        .loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 4000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--chemistry-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Chemistry-specific */
+        .chemistry-badge {
+            background: linear-gradient(135deg, var(--chemistry-blue) 0%, var(--chemistry-purple) 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .subject-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .objective-chemistry {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--chemistry-blue);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .theoretical-chemistry {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--chemistry-green);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-out;
+                z-index: 1001;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .content-area {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .materials-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+
+            .student-performance-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .content-section {
+                padding: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .materials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .student-performance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .timetable-container {
+                font-size: 0.9rem;
+            }
+
+            .subject-performance {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .subject-name {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .student-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .comparison-table {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Custom Icons */
+        .icon {
+            font-size: 1.2rem;
+        }
+
+        /* Toggle View */
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .view-toggle-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .view-toggle-btn.active {
+            background: var(--chemistry-blue);
+            color: white;
+            border-color: var(--chemistry-blue);
+        }
+        
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loader -->
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <div>Loading...</div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">⚗️</div>
+            <span>Chemistry StudyHub</span>
+        </div>
+        
+        <nav>
+            <ul class="nav-links">
+                <li><a href="#dashboard" class="nav-link active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#materials" class="nav-link" onclick="showSection('materials')"><i class="fas fa-file-alt"></i> Materials</a></li>
+                <li><a href="#timetable" class="nav-link" onclick="showSection('timetable')"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
+                <li><a href="#analytics" class="nav-link" onclick="showSection('analytics')"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+            </ul>
+        </nav>
+
+        <div class="header-actions">
+            <div id="adminBadge" class="admin-badge" style="display: none;">
+                <i class="fas fa-crown"></i> Admin Mode
+            </div>
+            <button id="loginBtn" class="btn btn-admin" onclick="showLoginModal()">
+                <i class="fas fa-lock"></i> Admin Login
+            </button>
+            <button id="uploadBtn" class="btn btn-primary hidden" onclick="openUploadModal()">
+                <i class="fas fa-upload"></i> Upload
+            </button>
+            <button id="addClassBtn" class="btn btn-primary hidden" onclick="openClassModal()">
+                <i class="fas fa-plus"></i> Add Class
+            </button>
+            <button id="addMarksBtn" class="btn btn-primary hidden" onclick="openMarksModal()">
+                <i class="fas fa-plus-circle"></i> Add Marks
+            </button>
+            <button id="logoutBtn" class="btn btn-danger hidden" onclick="logoutAdmin()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Quick Actions</h3>
+            <a href="#" class="sidebar-link active" onclick="showSection('dashboard')">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="#" class="sidebar-link" onclick="showSection('materials')">
+                <i class="fas fa-book"></i> All Materials
+            </a>
+            <a href="#" class="sidebar-link" onclick="showSection('timetable')">
+                <i class="fas fa-table"></i> Timetable
+            </a>
+            <a href="#" class="sidebar-link" onclick="showSection('analytics')">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Categories</h3>
+            <a href="#" class="sidebar-link" onclick="filterByCategory('Lecture Notes')">
+                <i class="fas fa-sticky-note"></i> Lecture Notes
+            </a>
+            <a href="#" class="sidebar-link" onclick="filterByCategory('Assignments')">
+                <i class="fas fa-tasks"></i> Assignments
+            </a>
+            <a href="#" class="sidebar-link" onclick="filterByCategory('Past Papers')">
+                <i class="fas fa-file-pdf"></i> Past Papers
+            </a>
+            <a href="#" class="sidebar-link" onclick="filterByCategory('Books')">
+                <i class="fas fa-book-open"></i> Books
+            </a>
+            <a href="#" class="sidebar-link" onclick="filterByCategory('Projects')">
+                <i class="fas fa-code"></i> Projects
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Chemistry Subjects</h3>
+            <a href="#" class="sidebar-link" onclick="filterBySubject('Objective Chemistry')">
+                <i class="fas fa-flask"></i> Objective Chemistry
+            </a>
+            <a href="#" class="sidebar-link" onclick="filterBySubject('Theoretical Chemistry')">
+                <i class="fas fa-atom"></i> Theoretical Chemistry
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">Week Navigation</h3>
+            <div style="padding: 0 1rem;">
+                <div class="week-nav" style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                    <button class="btn btn-sm" onclick="changeWeek(-1)" style="flex: 1;">
+                        <i class="fas fa-chevron-left"></i> Prev
+                    </button>
+                    <div id="weekDisplay" style="font-weight: 600; text-align: center; flex: 2;">Week 1</div>
+                    <button class="btn btn-sm" onclick="changeWeek(1)" style="flex: 1;">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-area">
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title"><i class="fas fa-tachometer-alt"></i> Chemistry Dashboard</h1>
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-box" id="globalSearch" placeholder="Search chemistry materials, classes..." onkeyup="globalSearch(event)">
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalMaterials">0</h3>
+                            <p>Chemistry Materials</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalDownloads">0</h3>
+                            <p>Total Downloads</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalClasses">0</h3>
+                            <p>Chemistry Classes</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="uniqueSubjects">2</h3>
+                            <p>Chemistry Subjects</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section">
+                    <h2 class="section-title"><i class="fas fa-fire"></i> Trending Chemistry Materials</h2>
+                    <div id="trendingMaterials" class="materials-grid">
+                        <!-- Trending materials will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Materials Section -->
+            <section id="materialsSection" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h1 class="section-title"><i class="fas fa-book"></i> Chemistry Study Materials</h1>
+                    <div>
+                        <button class="btn btn-primary" onclick="openUploadModal()" id="uploadMaterialsBtn" style="display: none;">
+                            <i class="fas fa-upload"></i> Upload New
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <div class="filter-group">
+                        <label class="filter-label">Category</label>
+                        <select class="filter-select" id="categoryFilter" onchange="filterMaterials()">
+                            <option value="">All Categories</option>
+                            <option value="Lecture Notes">Lecture Notes</option>
+                            <option value="Assignments">Assignments</option>
+                            <option value="Past Papers">Past Papers</option>
+                            <option value="Books">Books</option>
+                            <option value="Projects">Projects</option>
+                            <option value="Tutorials">Tutorials</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Sort By</label>
+                        <select class="filter-select" id="sortFilter" onchange="sortMaterials()">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="downloads">Most Downloads</option>
+                            <option value="title">Title A-Z</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Subject</label>
+                        <select class="filter-select" id="subjectFilter" onchange="filterMaterials()">
+                            <option value="">All Subjects</option>
+                            <option value="Objective Chemistry">Objective Chemistry</option>
+                            <option value="Theoretical Chemistry">Theoretical Chemistry</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="materialsContainer" class="materials-grid">
+                    <!-- Materials will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Timetable Section -->
+            <section id="timetableSection" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h1 class="section-title"><i class="fas fa-calendar-alt"></i> Chemistry Classes Timetable</h1>
+                    <div class="week-nav">
+                        <button class="btn" onclick="changeWeek(-1)">
+                            <i class="fas fa-chevron-left"></i> Previous Week
+                        </button>
+                        <div id="weekDisplayMain" style="font-weight: 600; padding: 0 1rem;">Week 1 (Mar 10 - Mar 14)</div>
+                        <button class="btn" onclick="changeWeek(1)">
+                            Next Week <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="timetable-container">
+                    <table class="timetable-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Monday</th>
+                                <th>Tuesday</th>
+                                <th>Wednesday</th>
+                                <th>Thursday</th>
+                                <th>Friday</th>
+                                <th>Saturday</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timetableBody">
+                            <!-- Timetable rows will be generated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="adminTimetableInfo" class="content-section" style="margin-top: 2rem; display: none;">
+                    <h3><i class="fas fa-info-circle"></i> Admin Controls</h3>
+                    <p>Click on empty time slots to add classes. Click on existing classes to edit or delete them.</p>
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <button class="btn btn-primary" onclick="openClassModal()">
+                            <i class="fas fa-plus"></i> Add New Class
+                        </button>
+                        <button class="btn" onclick="exportTimetable()">
+                            <i class="fas fa-download"></i> Export Timetable
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analyticsSection" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h1 class="section-title"><i class="fas fa-chart-bar"></i> Chemistry Performance Analytics</h1>
+                    <button class="btn btn-primary" onclick="openMarksModal()" id="addMarksBtnAnalytics" style="display: none;">
+                        <i class="fas fa-plus-circle"></i> Add Marks
+                    </button>
+                </div>
+                
+                <div class="stats-grid" style="margin-bottom: 2rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f0abfc 0%, #d946ef 100%);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="avgDownloads">0</h3>
+                            <p>Avg. Downloads/Day</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="activeUsers">0</h3>
+                            <p>Active Students</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="popularCategory">-</h3>
+                            <p>Most Popular Category</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #34d399 0%, #10b981 100%);">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="peakHour">-</h3>
+                            <p>Peak Activity Hour</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MARKS SECTION -->
+                <div class="content-section">
+                    <h2 class="section-title" style="margin-bottom: 1.5rem;"><i class="fas fa-chart-bar"></i> Chemistry Performance</h2>
+                    
+                    <!-- Overall Performance -->
+                    <div class="marks-category">
+                        <div class="marks-category-header">
+                            <div class="marks-category-title">
+                                <div class="marks-category-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                                Overall Chemistry Performance
+                            </div>
+                            <div id="overallGrade" style="font-size: 1.2rem; font-weight: 700;">-</div>
+                        </div>
+                        
+                        <div class="marks-stats">
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="avgExamScore">0%</div>
+                                <div class="marks-stat-label">Exam Average</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="avgAssignmentScore">0%</div>
+                                <div class="marks-stat-label">Assignment Average</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="avgQuizScore">0%</div>
+                                <div class="marks-stat-label">Quiz Average</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="overallAverage">0%</div>
+                                <div class="marks-stat-label">Overall Average</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subject Performance -->
+                    <div class="marks-category">
+                        <div class="marks-category-header">
+                            <h3 class="marks-category-title">
+                                <div class="marks-category-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                Subject Performance
+                            </h3>
+                        </div>
+                        
+                        <div id="subjectPerformanceChart">
+                            <!-- Subject performance bars will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- Exam Marks -->
+                    <div class="marks-category">
+                        <div class="marks-category-header">
+                            <h3 class="marks-category-title">
+                                <div class="marks-category-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                Chemistry Exam Marks
+                            </h3>
+                            <div style="font-weight: 600; color: var(--chemistry-blue);">
+                                Average: <span id="examAverage">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="marks-stats" style="margin-bottom: 1rem;">
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="totalExams">0</div>
+                                <div class="marks-stat-label">Total Exams</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="highestExam">0%</div>
+                                <div class="marks-stat-label">Highest Score</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="lowestExam">0%</div>
+                                <div class="marks-stat-label">Lowest Score</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="examPassRate">0%</div>
+                                <div class="marks-stat-label">Pass Rate</div>
+                            </div>
+                        </div>
+                        
+                        <table class="marks-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Exam Name</th>
+                                    <th>Score</th>
+                                    <th>Max Score</th>
+                                    <th>Percentage</th>
+                                    <th>Grade</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="examMarksTable">
+                                <!-- Exam marks will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Assignment Marks -->
+                    <div class="marks-category">
+                        <div class="marks-category-header">
+                            <h3 class="marks-category-title">
+                                <div class="marks-category-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                Chemistry Assignment Marks
+                            </h3>
+                            <div style="font-weight: 600; color: var(--success);">
+                                Average: <span id="assignmentAverage">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="marks-stats" style="margin-bottom: 1rem;">
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="totalAssignments">0</div>
+                                <div class="marks-stat-label">Total Assignments</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="highestAssignment">0%</div>
+                                <div class="marks-stat-label">Highest Score</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="lowestAssignment">0%</div>
+                                <div class="marks-stat-label">Lowest Score</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="assignmentCompletion">0%</div>
+                                <div class="marks-stat-label">Completion Rate</div>
+                            </div>
+                        </div>
+                        
+                        <table class="marks-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Assignment</th>
+                                    <th>Score</th>
+                                    <th>Max Score</th>
+                                    <th>Percentage</th>
+                                    <th>Grade</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentMarksTable">
+                                <!-- Assignment marks will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Quiz Marks -->
+                    <div class="marks-category">
+                        <div class="marks-category-header">
+                            <h3 class="marks-category-title">
+                                <div class="marks-category-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                                    <i class="fas fa-question-circle"></i>
+                                </div>
+                                Chemistry Quiz Marks
+                            </h3>
+                            <div style="font-weight: 600; color: var(--chemistry-purple);">
+                                Average: <span id="quizAverage">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="marks-stats" style="margin-bottom: 1rem;">
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="totalQuizzes">0</div>
+                                <div class="marks-stat-label">Total Quizzes</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="highestQuiz">0%</div>
+                                <div class="marks-stat-label">Highest Score</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="lowestQuiz">0%</div>
+                                <div class="marks-stat-label">Lowest Score</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="quizAttempts">0</div>
+                                <div class="marks-stat-label">Total Attempts</div>
+                            </div>
+                        </div>
+                        
+                        <table class="marks-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Quiz Name</th>
+                                    <th>Score</th>
+                                    <th>Max Score</th>
+                                    <th>Percentage</th>
+                                    <th>Grade</th>
+                                    <th>Date</th>
+                                    <th>Time Taken</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quizMarksTable">
+                                <!-- Quiz marks will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- STUDENT PERFORMANCE COMPARISON SECTION -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title"><i class="fas fa-users"></i> Student Performance Comparison</h2>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary" onclick="toggleStudentView('cards')">
+                                <i class="fas fa-th-large"></i> Cards View
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="toggleStudentView('table')">
+                                <i class="fas fa-table"></i> Table View
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="exportStudentPerformance()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters for student comparison -->
+                    <div class="filters" id="studentFilters">
+                        <div class="filter-group">
+                            <label class="filter-label">Assessment Type</label>
+                            <select class="filter-select" id="studentAssessmentType" onchange="updateStudentComparison()">
+                                <option value="all">All Assessments</option>
+                                <option value="exam">Exams Only</option>
+                                <option value="assignment">Assignments Only</option>
+                                <option value="quiz">Quizzes Only</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Subject</label>
+                            <select class="filter-select" id="studentSubjectFilter" onchange="updateStudentComparison()">
+                                <option value="all">All Subjects</option>
+                                <option value="Objective Chemistry">Objective Chemistry</option>
+                                <option value="Theoretical Chemistry">Theoretical Chemistry</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Sort By</label>
+                            <select class="filter-select" id="studentSortBy" onchange="updateStudentComparison()">
+                                <option value="name">Name A-Z</option>
+                                <option value="average">Average (High to Low)</option>
+                                <option value="improvement">Improvement</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Student Performance Summary -->
+                    <div class="marks-category" id="studentSummary" style="margin-bottom: 1.5rem;">
+                        <div class="marks-category-header">
+                            <h3 class="marks-category-title">
+                                <div class="marks-category-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                Class Performance Summary
+                            </h3>
+                            <div style="font-weight: 600; color: var(--chemistry-purple);">
+                                Class Average: <span id="classAverage">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="marks-stats">
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="totalStudents">0</div>
+                                <div class="marks-stat-label">Total Students</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="topPerformer">-</div>
+                                <div class="marks-stat-label">Top Performer</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="classPassRate">0%</div>
+                                <div class="marks-stat-label">Class Pass Rate</div>
+                            </div>
+                            <div class="marks-stat">
+                                <div class="marks-stat-value" id="mostImproved">-</div>
+                                <div class="marks-stat-label">Most Improved</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Student Cards View -->
+                    <div id="studentCardsView" class="student-performance-grid">
+                        <!-- Student cards will be loaded here -->
+                    </div>
+                    
+                    <!-- Student Table View -->
+                    <div id="studentTableView" class="timetable-container" style="display: none; margin-top: 1.5rem;">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Student</th>
+                                    <th>Overall Avg</th>
+                                    <th>Objective Chemistry</th>
+                                    <th>Theoretical Chemistry</th>
+                                    <th>Exams</th>
+                                    <th>Assignments</th>
+                                    <th>Quizzes</th>
+                                    <th>Trend</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentComparisonTable">
+                                <!-- Student comparison rows will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Individual Student Performance Modal -->
+                    <div id="studentDetailModal" class="modal">
+                        <div class="modal-content" style="max-width: 800px;">
+                            <div class="modal-header">
+                                <h2 class="modal-title"><i class="fas fa-user-graduate"></i> Student Performance Details</h2>
+                                <button class="close-btn" onclick="hideStudentDetailModal()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="studentDetailContent">
+                                    <!-- Student details will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Trends Chart -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3 class="section-title"><i class="fas fa-chart-line"></i> Chemistry Performance Trends Over Time</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary" onclick="updateTrendChart('monthly')">
+                                <i class="fas fa-calendar-alt"></i> Monthly
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="updateTrendChart('weekly')">
+                                <i class="fas fa-calendar-week"></i> Weekly
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="updateTrendChart('subject')">
+                                <i class="fas fa-book"></i> By Subject
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="exportTrendChart()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 1rem; position: relative;">
+                        <div style="height: 400px;">
+                            <canvas id="performanceTrendChart"></canvas>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;">
+                            <div style="text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <div style="width: 12px; height: 12px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 2px;"></div>
+                                    <span style="font-size: 0.9rem; font-weight: 600;">Objective Chemistry</span>
+                                </div>
+                                <div style="font-size: 1.2rem; font-weight: 700; color: var(--chemistry-blue);" id="trendObjAvg">0%</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <div style="width: 12px; height: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 2px;"></div>
+                                    <span style="font-size: 0.9rem; font-weight: 600;">Theoretical Chemistry</span>
+                                </div>
+                                <div style="font-size: 1.2rem; font-weight: 700; color: var(--success);" id="trendTheoryAvg">0%</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <div style="width: 12px; height: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 2px;"></div>
+                                    <span style="font-size: 0.9rem; font-weight: 600;">Overall Average</span>
+                                </div>
+                                <div style="font-size: 1.2rem; font-weight: 700; color: var(--chemistry-purple);" id="trendOverallAvg">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-lock"></i> Admin Authentication</h2>
+                <button class="close-btn" onclick="hideLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="adminEmail" placeholder="admin@chemistry.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="adminPassword" placeholder="Enter password">
+                </div>
+                <div class="form-actions">
+                    <button class="btn" onclick="hideLoginModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="loginAdmin()">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-upload"></i> Upload Chemistry Material</h2>
+                <button class="close-btn" onclick="hideUploadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" onsubmit="uploadMaterial(event)">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="materialTitle" placeholder="e.g., Organic Chemistry Notes" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description *</label>
+                        <textarea class="form-control" id="materialDescription" rows="3" placeholder="Describe the content..." required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <select class="form-control" id="materialCategory" required>
+                                <option value="">Select Category</option>
+                                <option value="Lecture Notes">Lecture Notes</option>
+                                <option value="Assignments">Assignments</option>
+                                <option value="Past Papers">Past Papers</option>
+                                <option value="Books">Books</option>
+                                <option value="Projects">Projects</option>
+                                <option value="Tutorials">Tutorials</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject *</label>
+                            <select class="form-control" id="materialSubject" required>
+                                <option value="">Select Subject</option>
+                                <option value="Objective Chemistry">Objective Chemistry</option>
+                                <option value="Theoretical Chemistry">Theoretical Chemistry</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Upload File *</label>
+                        <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
+                            <div class="file-upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h4>Click to upload or drag and drop</h4>
+                            <p>PDF, DOC, PPT, ZIP files (Max 10MB)</p>
+                            <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect(event)">
+                        </div>
+                        <div id="fileInfo" class="form-control" style="margin-top: 1rem; display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span id="fileName"></span>
+                                <button type="button" class="btn btn-sm" onclick="clearFile()">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="hideUploadModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload to Cloud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="classModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-calendar-plus"></i> Manage Chemistry Class</h2>
+                <button class="close-btn" onclick="hideClassModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="classForm" onsubmit="saveClass(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Subject *</label>
+                            <select class="form-control" id="classSubject" required>
+                                <option value="">Select Subject</option>
+                                <option value="Objective Chemistry">Objective Chemistry</option>
+                                <option value="Theoretical Chemistry">Theoretical Chemistry</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Course Code</label>
+                            <input type="text" class="form-control" id="classCode" placeholder="e.g., CHEM101">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Day *</label>
+                            <select class="form-control" id="classDay" required>
+                                <option value="">Select Day</option>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                                <option value="Saturday">Saturday</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Time Slot *</label>
+                            <select class="form-control" id="classTimeSlot" required>
+                                <option value="">Select Time</option>
+                                <option value="07:30-08:50">07:30 AM - 08:50 AM</option>
+                                <option value="09:30-10:30">09:30 AM - 10:30 AM</option>
+                                <option value="10:40-11:45">10:40 AM - 11:45 AM</option>
+                                <option value="11:45-12:55">11:45 AM - 12:45 PM</option>
+                                <option value="01:30-02:30">01:30 PM - 02:30 PM</option>
+                                <option value="02:40-03:50">02:40 PM - 03:50 PM</option>
+                                <option value="04:20-05:30">04:20 PM - 05:30 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Instructor *</label>
+                            <input type="text" class="form-control" id="classInstructor" placeholder="e.g., Dr. Smith" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Room *</label>
+                            <input type="text" class="form-control" id="classRoom" placeholder="e.g., Lab 101" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Class Type</label>
+                        <select class="form-control" id="classType">
+                            <option value="Lecture">Lecture</option>
+                            <option value="Lab">Lab</option>
+                            <option value="Tutorial">Tutorial</option>
+                            <option value="Seminar">Seminar</option>
+                            <option value="Workshop">Workshop</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="classNotes" rows="2" placeholder="Optional notes..."></textarea>
+                    </div>
+                    <input type="hidden" id="classId">
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="hideClassModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="classSubmitBtn">Save to Cloud</button>
+                        <button type="button" class="btn btn-danger" id="deleteClassBtn" onclick="deleteClass()" style="display: none;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marks Modal -->
+    <div id="marksModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-plus-circle"></i> Add/Edit Chemistry Marks</h2>
+                <button class="close-btn" onclick="hideMarksModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="marksForm" onsubmit="saveMarks(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <select class="form-control" id="marksCategory" required onchange="toggleMarksFields()">
+                                <option value="">Select Category</option>
+                                <option value="exam">Exam</option>
+                                <option value="assignment">Assignment</option>
+                                <option value="quiz">Quiz</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject *</label>
+                            <select class="form-control" id="marksSubject" required>
+                                <option value="">Select Subject</option>
+                                <option value="Objective Chemistry">Objective Chemistry</option>
+                                <option value="Theoretical Chemistry">Theoretical Chemistry</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" id="assessmentLabel">Assessment Name *</label>
+                            <input type="text" class="form-control" id="marksName" placeholder="e.g., Midterm Exam" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Student Name *</label>
+                            <input type="text" class="form-control" id="marksStudent" placeholder="e.g., John Doe" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="marksDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Score Obtained *</label>
+                            <input type="number" class="form-control" id="marksScore" min="0" max="100" step="0.01" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Maximum Score *</label>
+                            <input type="number" class="form-control" id="marksMaxScore" min="1" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Weight (0-1)</label>
+                            <input type="number" class="form-control" id="marksWeight" min="0" max="1" step="0.05" value="0.1">
+                        </div>
+                    </div>
+                    
+                    <div id="extraFields">
+                        <!-- Extra fields for different categories -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="marksNotes" rows="2" placeholder="Additional notes..."></textarea>
+                    </div>
+                    
+                    <input type="hidden" id="marksId">
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="hideMarksModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="marksSubmitBtn">Save to Cloud</button>
+                        <button type="button" class="btn btn-danger" id="deleteMarksBtn" onclick="deleteMarks()" style="display: none;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // 🔥 Firebase Configuration - DEMO VERSION FOR NETLIFY DEPLOYMENT
+        // ⚠️ Replace these with your own Firebase config for production use
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEMO_API_KEY_FOR_TESTING_ONLY",
+            authDomain: "chemistry-demo.firebaseapp.com",
+            projectId: "chemistry-demo-project",
+            storageBucket: "chemistry-demo.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890"
+        };
+
+        // Single Admin Configuration - DEMO CREDENTIALS
+        // ⚠️ Change these for production use
+        const ADMIN_CONFIG = {
+            EMAIL: "admin@chemistry-demo.com",
+            PASSWORD: "demo123",
+            GRADING_SCALE: {
+                A: { min: 90, color: '#10b981' },
+                B: { min: 80, color: '#3b82f6' },
+                C: { min: 70, color: '#f59e0b' },
+                D: { min: 60, color: '#ef4444' },
+                F: { min: 0, color: '#7f1d1d' }
+            },
+            MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+            DEFAULT_CLASS_COLORS: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899']
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Global State
+        let state = {
+            currentUser: null,
+            isAdmin: false,
+            currentWeek: 1,
+            editingClassId: null,
+            editingMarksId: null,
+            materials: [],
+            classes: [],
+            marks: [],
+            currentSection: 'dashboard',
+            searchQuery: '',
+            selectedFile: null,
+            studentView: 'cards',
+            performanceChart: null,
+            isAuthenticated: false
+        };
+        
+        const TIME_SLOTS = [
+            "07:30-08:50",
+            "09:30-10:30",
+            "10:40-11:45",
+            "11:45-12:55",
+            "01:30-02:30",
+            "02:40-03:50",
+            "04:20-05:30"
+        ];
+        const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            checkLocalAuth();
+            setupEventListeners();
+            showSection('dashboard');
+        }
+
+        function checkLocalAuth() {
+            const savedAuth = localStorage.getItem('chemistry_admin_auth');
+            if (savedAuth) {
+                const authData = JSON.parse(savedAuth);
+                if (authData.email === ADMIN_CONFIG.EMAIL && authData.isAuthenticated) {
+                    state.isAuthenticated = true;
+                    state.isAdmin = true;
+                    showAdminUI();
+                    loadInitialData();
+                    showNotification('Welcome back, Admin!', 'success');
+                }
+            }
+        }
+
+        async function loginAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!email || !password) {
+                showNotification('Please enter email and password', 'error');
+                return;
+            }
+            
+            if (email === ADMIN_CONFIG.EMAIL && password === ADMIN_CONFIG.PASSWORD) {
+                state.isAuthenticated = true;
+                state.isAdmin = true;
+                
+                // Save auth to localStorage
+                localStorage.setItem('chemistry_admin_auth', JSON.stringify({
+                    email: email,
+                    isAuthenticated: true,
+                    timestamp: Date.now()
+                }));
+                
+                showAdminUI();
+                hideLoginModal();
+                loadInitialData();
+                showNotification('Login successful! Welcome Admin!', 'success');
+            } else {
+                showNotification('Invalid email or password', 'error');
+            }
+        }
+
+        function logoutAdmin() {
+            state.isAuthenticated = false;
+            state.isAdmin = false;
+            state.materials = [];
+            state.classes = [];
+            state.marks = [];
+            
+            localStorage.removeItem('chemistry_admin_auth');
+            hideAdminUI();
+            showNotification('Logged out successfully', 'success');
+            
+            // Reset UI
+            if (state.currentSection === 'materials') displayMaterials();
+            if (state.currentSection === 'timetable') generateTimetable();
+            if (state.currentSection === 'analytics') loadMarksAnalytics();
+        }
+
+        async function loadInitialData() {
+            try {
+                showLoader();
+                
+                // Load materials from localStorage or initialize
+                const savedMaterials = localStorage.getItem('chemistry_materials');
+                if (savedMaterials) {
+                    state.materials = JSON.parse(savedMaterials);
+                } else {
+                    // Initialize with demo data
+                    state.materials = [
+                        {
+                            id: '1',
+                            title: 'Organic Chemistry Fundamentals',
+                            description: 'Complete guide to organic chemistry basics including hydrocarbons, functional groups, and reactions.',
+                            category: 'Lecture Notes',
+                            subject: 'Objective Chemistry',
+                            date: new Date().toISOString(),
+                            downloads: 42,
+                            fileName: 'organic-chemistry.pdf',
+                            fileSize: '2.4 MB',
+                            fileType: 'application/pdf',
+                            isPublic: true,
+                            createdBy: 'admin'
+                        },
+                        {
+                            id: '2',
+                            title: 'Chemical Bonding Assignment',
+                            description: 'Assignment covering ionic, covalent, and metallic bonding with practice problems.',
+                            category: 'Assignments',
+                            subject: 'Theoretical Chemistry',
+                            date: new Date(Date.now() - 86400000).toISOString(),
+                            downloads: 28,
+                            fileName: 'bonding-assignment.docx',
+                            fileSize: '1.8 MB',
+                            fileType: 'application/docx',
+                            isPublic: true,
+                            createdBy: 'admin'
+                        }
+                    ];
+                }
+                
+                // Load classes
+                const savedClasses = localStorage.getItem('chemistry_classes');
+                if (savedClasses) {
+                    state.classes = JSON.parse(savedClasses);
+                } else {
+                    // Initialize with demo data
+                    state.classes = [
+                        {
+                            id: '1',
+                            subject: 'Objective Chemistry',
+                            code: 'CHEM101',
+                            day: 'Monday',
+                            timeSlot: '09:30-10:30',
+                            instructor: 'Dr. Smith',
+                            room: 'Lecture Hall A',
+                            type: 'Lecture',
+                            notes: 'Bring calculator',
+                            color: '#3B82F6',
+                            createdBy: 'admin'
+                        },
+                        {
+                            id: '2',
+                            subject: 'Theoretical Chemistry',
+                            code: 'CHEM102',
+                            day: 'Tuesday',
+                            timeSlot: '10:40-11:45',
+                            instructor: 'Prof. Johnson',
+                            room: 'Lab 101',
+                            type: 'Lab',
+                            notes: 'Safety goggles required',
+                            color: '#10B981',
+                            createdBy: 'admin'
+                        }
+                    ];
+                }
+                
+                // Load marks
+                const savedMarks = localStorage.getItem('chemistry_marks');
+                if (savedMarks) {
+                    state.marks = JSON.parse(savedMarks);
+                } else {
+                    // Initialize with demo data
+                    state.marks = [
+                        {
+                            id: '1',
+                            category: 'exam',
+                            subject: 'Objective Chemistry',
+                            student: 'John Doe',
+                            name: 'Midterm Exam',
+                            date: '2024-03-15',
+                            score: 85,
+                            maxScore: 100,
+                            percentage: 85,
+                            grade: 'B',
+                            weight: 0.3,
+                            notes: 'Good performance',
+                            createdBy: 'admin'
+                        },
+                        {
+                            id: '2',
+                            category: 'assignment',
+                            subject: 'Theoretical Chemistry',
+                            student: 'Jane Smith',
+                            name: 'Lab Report 1',
+                            date: '2024-03-10',
+                            score: 95,
+                            maxScore: 100,
+                            percentage: 95,
+                            grade: 'A',
+                            weight: 0.1,
+                            status: 'graded',
+                            notes: 'Excellent work',
+                            createdBy: 'admin'
+                        }
+                    ];
+                }
+                
+                updateStats();
+                generateTimetable();
+                displayMaterials();
+                displayTrendingMaterials();
+                
+                if (state.currentSection === 'analytics') {
+                    loadMarksAnalytics();
+                    loadStudentPerformance();
+                    setTimeout(() => initializeTrendChart(), 100);
+                }
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showNotification('Error loading data', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Save data to localStorage
+        function saveDataToLocal(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+                showNotification('Error saving data', 'error');
+            }
+        }
+
+        // Upload Material
+        async function uploadMaterial(event) {
+            event.preventDefault();
+            
+            if (!state.isAdmin) {
+                showNotification('Admin access required', 'error');
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                const materialData = {
+                    id: Date.now().toString(),
+                    title: document.getElementById('materialTitle').value,
+                    description: document.getElementById('materialDescription').value,
+                    category: document.getElementById('materialCategory').value,
+                    subject: document.getElementById('materialSubject').value,
+                    date: new Date().toISOString(),
+                    downloads: 0,
+                    fileName: state.selectedFile ? state.selectedFile.name : 'No file',
+                    fileSize: state.selectedFile ? formatFileSize(state.selectedFile.size) : '0 KB',
+                    fileType: state.selectedFile ? state.selectedFile.type : 'Unknown',
+                    isPublic: true,
+                    createdBy: 'admin'
+                };
+                
+                // Add to state
+                state.materials.unshift(materialData);
+                
+                // Save to localStorage
+                saveDataToLocal('chemistry_materials', state.materials);
+                
+                updateStats();
+                hideUploadModal();
+                clearFile();
+                document.getElementById('uploadForm').reset();
+                
+                if (state.currentSection === 'materials') displayMaterials();
+                displayTrendingMaterials();
+                
+                showNotification('Material uploaded successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showNotification('Upload failed', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Download Material
+        function downloadMaterial(materialId) {
+            const material = state.materials.find(m => m.id === materialId);
+            if (!material) return;
+            
+            // Update download count
+            material.downloads = (material.downloads || 0) + 1;
+            saveDataToLocal('chemistry_materials', state.materials);
+            
+            updateStats();
+            
+            if (state.currentSection === 'materials') displayMaterials();
+            displayTrendingMaterials();
+            
+            showNotification('Download started!', 'success');
+            
+            // Simulate file download
+            const link = document.createElement('a');
+            link.download = material.title + '.pdf';
+            link.href = '#';
+            link.click();
+        }
+
+        // Save Class
+        function saveClass(event) {
+            event.preventDefault();
+            
+            if (!state.isAdmin) {
+                showNotification('Admin access required', 'error');
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                const classData = {
+                    id: state.editingClassId || Date.now().toString(),
+                    subject: document.getElementById('classSubject').value,
+                    code: document.getElementById('classCode').value,
+                    day: document.getElementById('classDay').value,
+                    timeSlot: document.getElementById('classTimeSlot').value,
+                    instructor: document.getElementById('classInstructor').value,
+                    room: document.getElementById('classRoom').value,
+                    type: document.getElementById('classType').value,
+                    notes: document.getElementById('classNotes').value,
+                    color: getRandomColor(),
+                    createdBy: 'admin',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                if (state.editingClassId) {
+                    // Update existing class
+                    const index = state.classes.findIndex(cls => cls.id === state.editingClassId);
+                    if (index !== -1) {
+                        state.classes[index] = { ...state.classes[index], ...classData };
+                    }
+                    
+                    showNotification('Class updated!', 'success');
+                } else {
+                    // Add new class
+                    state.classes.push(classData);
+                    showNotification('Class saved!', 'success');
+                }
+                
+                // Save to localStorage
+                saveDataToLocal('chemistry_classes', state.classes);
+                
+                generateTimetable();
+                updateStats();
+                hideClassModal();
+                document.getElementById('classForm').reset();
+                
+            } catch (error) {
+                console.error('Error saving class:', error);
+                showNotification('Error saving class', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function deleteClass() {
+            if (!confirm('Delete this class?')) return;
+            
+            try {
+                showLoader();
+                
+                // Remove from state
+                state.classes = state.classes.filter(cls => cls.id !== state.editingClassId);
+                
+                // Save to localStorage
+                saveDataToLocal('chemistry_classes', state.classes);
+                
+                generateTimetable();
+                updateStats();
+                hideClassModal();
+                
+                showNotification('Class deleted!', 'success');
+            } catch (error) {
+                showNotification('Error deleting class', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Save Marks
+        function saveMarks(event) {
+            event.preventDefault();
+            
+            if (!state.isAdmin) {
+                showNotification('Admin access required', 'error');
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                const category = document.getElementById('marksCategory').value;
+                const score = parseFloat(document.getElementById('marksScore').value);
+                const maxScore = parseFloat(document.getElementById('marksMaxScore').value);
+                const percentage = calculatePercentage(score, maxScore);
+                const grade = calculateGrade(percentage);
+                
+                const marksData = {
+                    id: state.editingMarksId || Date.now().toString(),
+                    category: category,
+                    subject: document.getElementById('marksSubject').value,
+                    student: document.getElementById('marksStudent').value,
+                    name: document.getElementById('marksName').value,
+                    date: document.getElementById('marksDate').value,
+                    score: score,
+                    maxScore: maxScore,
+                    percentage: parseFloat(percentage),
+                    grade: grade,
+                    weight: parseFloat(document.getElementById('marksWeight').value) || 0.1,
+                    notes: document.getElementById('marksNotes').value,
+                    createdBy: 'admin',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Add extra fields based on category
+                if (category === 'exam') {
+                    marksData.duration = document.getElementById('examDuration')?.value;
+                    marksData.room = document.getElementById('examRoom')?.value;
+                } else if (category === 'assignment') {
+                    marksData.dueDate = document.getElementById('assignmentDueDate')?.value;
+                    marksData.status = document.getElementById('assignmentStatus')?.value || 'submitted';
+                } else if (category === 'quiz') {
+                    marksData.timeTaken = document.getElementById('quizTimeTaken')?.value;
+                    marksData.attempts = parseInt(document.getElementById('quizAttempts')?.value) || 1;
+                }
+                
+                if (state.editingMarksId) {
+                    // Update
+                    const index = state.marks.findIndex(m => m.id === state.editingMarksId);
+                    if (index !== -1) state.marks[index] = { ...state.marks[index], ...marksData };
+                    showNotification('Marks updated!', 'success');
+                } else {
+                    // Add new
+                    state.marks.push(marksData);
+                    showNotification('Marks saved!', 'success');
+                }
+                
+                // Save to localStorage
+                saveDataToLocal('chemistry_marks', state.marks);
+                
+                loadMarksAnalytics();
+                loadStudentPerformance();
+                hideMarksModal();
+                document.getElementById('marksForm').reset();
+                
+            } catch (error) {
+                console.error('Error saving marks:', error);
+                showNotification('Error saving marks', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function deleteMarks() {
+            if (!confirm('Delete these marks?')) return;
+            
+            try {
+                showLoader();
+                
+                // Remove from state
+                state.marks = state.marks.filter(m => m.id !== state.editingMarksId);
+                
+                // Save to localStorage
+                saveDataToLocal('chemistry_marks', state.marks);
+                
+                loadMarksAnalytics();
+                loadStudentPerformance();
+                hideMarksModal();
+                
+                showNotification('Marks deleted!', 'success');
+            } catch (error) {
+                showNotification('Error deleting marks', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // UI Management Functions
+        function showAdminUI() {
+            document.getElementById('adminBadge').style.display = 'flex';
+            document.getElementById('uploadBtn').classList.remove('hidden');
+            document.getElementById('addClassBtn').classList.remove('hidden');
+            document.getElementById('addMarksBtn').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('uploadMaterialsBtn').style.display = 'block';
+            document.getElementById('adminTimetableInfo').style.display = 'block';
+            document.getElementById('addMarksBtnAnalytics').style.display = 'block';
+            document.getElementById('adminBadge').innerHTML = `<i class="fas fa-user"></i> Admin`;
+        }
+
+        function hideAdminUI() {
+            document.getElementById('adminBadge').style.display = 'none';
+            document.getElementById('uploadBtn').classList.add('hidden');
+            document.getElementById('addClassBtn').classList.add('hidden');
+            document.getElementById('addMarksBtn').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('loginBtn').style.display = 'block';
+            document.getElementById('uploadMaterialsBtn').style.display = 'none';
+            document.getElementById('adminTimetableInfo').style.display = 'none';
+            document.getElementById('addMarksBtnAnalytics').style.display = 'none';
+        }
+
+        function showSection(section) {
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('materialsSection').style.display = 'none';
+            document.getElementById('timetableSection').style.display = 'none';
+            document.getElementById('analyticsSection').style.display = 'none';
+            
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            
+            document.getElementById(`${section}Section`).style.display = 'block';
+            document.querySelector(`.nav-link[onclick*="${section}"]`)?.classList.add('active');
+            document.querySelector(`.sidebar-link[onclick*="${section}"]`)?.classList.add('active');
+            
+            state.currentSection = section;
+            
+            if (section === 'analytics') {
+                loadAnalytics();
+                loadMarksAnalytics();
+                loadStudentPerformance();
+                setTimeout(() => initializeTrendChart(), 100);
+            }
+            if (section === 'timetable') generateTimetable();
+            if (section === 'materials') displayMaterials();
+            if (section === 'dashboard') displayTrendingMaterials();
+        }
+
+        function updateStats() {
+            const totalDownloads = state.materials.reduce((sum, m) => sum + (m.downloads || 0), 0);
+            const avgDownloads = state.materials.length > 0 ? Math.round(totalDownloads / state.materials.length) : 0;
+            
+            document.getElementById('totalMaterials').textContent = state.materials.length;
+            document.getElementById('totalDownloads').textContent = totalDownloads.toLocaleString();
+            document.getElementById('totalClasses').textContent = state.classes.length;
+            document.getElementById('uniqueSubjects').textContent = 2;
+            document.getElementById('avgDownloads').textContent = avgDownloads;
+            
+            // Calculate popular category
+            const categories = {};
+            state.materials.forEach(m => {
+                categories[m.category] = (categories[m.category] || 0) + 1;
+            });
+            let popularCategory = '-';
+            let maxCount = 0;
+            for (const [cat, count] of Object.entries(categories)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    popularCategory = cat;
+                }
+            }
+            document.getElementById('popularCategory').textContent = popularCategory;
+            
+            // Active users (unique students with marks)
+            const uniqueStudents = new Set(state.marks.map(m => m.student));
+            document.getElementById('activeUsers').textContent = uniqueStudents.size;
+            
+            // Peak hour (demo data)
+            document.getElementById('peakHour').textContent = '2:00 PM';
+        }
+
+        // Display Functions
+        function displayMaterials(materials = state.materials) {
+            const container = document.getElementById('materialsContainer');
+            
+            if (!materials.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚗️</div>
+                        <h3>No chemistry materials found</h3>
+                        <p>${state.isAdmin ? 'Click "Upload New" to add materials' : 'No materials available yet'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = materials.map(material => `
+                <div class="material-card fade-in">
+                    ${material.createdBy === 'admin' ? '<div class="material-category">👑 Admin Upload</div>' : ''}
+                    <div class="material-header">
+                        <h3 class="material-title">${material.title}</h3>
+                        <div class="material-subject">
+                            <i class="fas ${material.subject === 'Objective Chemistry' ? 'fa-flask' : 'fa-atom'}"></i> 
+                            <span class="subject-tag ${material.subject === 'Objective Chemistry' ? 'objective-chemistry' : 'theoretical-chemistry'}">
+                                ${material.subject}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="material-body">
+                        <p class="material-description">${material.description}</p>
+                        
+                        <div class="material-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Category</span>
+                                <span class="meta-value">${material.category}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Uploaded By</span>
+                                <span class="meta-value">${material.createdBy || 'Admin'}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Downloads</span>
+                                <span class="meta-value">${(material.downloads || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Size</span>
+                                <span class="meta-value">${material.fileSize}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="material-actions">
+                            <button class="btn btn-sm btn-primary" onclick="downloadMaterial('${material.id}')">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="previewMaterial('${material.id}')">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            ${state.isAdmin ? `<button class="btn btn-sm" onclick="shareMaterial('${material.id}')">
+                                <i class="fas fa-share"></i> Share
+                            </button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayTrendingMaterials() {
+            const container = document.getElementById('trendingMaterials');
+            const trending = [...state.materials]
+                .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+                .slice(0, 4);
+            
+            if (!trending.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📚</div>
+                        <h3>No trending materials yet</h3>
+                        <p>Materials will appear here once uploaded</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = trending.map(material => `
+                <div class="material-card fade-in">
+                    <div class="material-category">🔥 Trending</div>
+                    <div class="material-header">
+                        <h3 class="material-title">${material.title}</h3>
+                        <div class="material-subject">
+                            <i class="fas ${material.subject === 'Objective Chemistry' ? 'fa-flask' : 'fa-atom'}"></i> 
+                            ${material.subject}
+                        </div>
+                    </div>
+                    <div class="material-body">
+                        <p class="material-description">${material.description.substring(0, 100)}...</p>
+                        
+                        <div class="material-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Downloads</span>
+                                <span class="meta-value">${(material.downloads || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Category</span>
+                                <span class="meta-value">${material.category}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="material-actions">
+                            <button class="btn btn-sm btn-primary" onclick="downloadMaterial('${material.id}')">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateTimetable() {
+            const tbody = document.getElementById('timetableBody');
+            tbody.innerHTML = '';
+            
+            TIME_SLOTS.forEach(timeSlot => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="time-cell">${timeSlot.replace('-', ' - ')}</td>`;
+                
+                DAYS.forEach(day => {
+                    const cellClasses = state.classes.filter(cls => 
+                        cls.day === day && cls.timeSlot === timeSlot
+                    );
+                    
+                    const cell = document.createElement('td');
+                    cell.className = 'class-cell';
+                    cell.onclick = () => handleCellClick(day, timeSlot);
+                    
+                    if (cellClasses.length > 0) {
+                        cellClasses.forEach(cls => {
+                            const classCard = document.createElement('div');
+                            classCard.className = 'class-card';
+                            classCard.onclick = (e) => {
+                                e.stopPropagation();
+                                openClassModal(cls.id);
+                            };
+                            
+                            classCard.innerHTML = `
+                                ${state.isAdmin ? '<div class="admin-badge-small">Edit</div>' : ''}
+                                <div class="class-header">
+                                    <div class="class-subject">${cls.subject}</div>
+                                    ${cls.code ? `<div class="class-code">${cls.code}</div>` : ''}
+                                </div>
+                                <div class="class-time">
+                                    <i class="fas fa-clock"></i> ${timeSlot.replace('-', ' - ')}
+                                </div>
+                                <div class="class-details">
+                                    <div class="class-detail">
+                                        <i class="fas fa-chalkboard-teacher"></i> ${cls.instructor}
+                                    </div>
+                                    <div class="class-detail">
+                                        <i class="fas fa-door-open"></i> ${cls.room}
+                                    </div>
+                                    ${cls.type ? `<div class="class-detail">
+                                        <i class="fas fa-graduation-cap"></i> ${cls.type}
+                                    </div>` : ''}
+                                </div>
+                            `;
+                            cell.appendChild(classCard);
+                        });
+                    } else {
+                        cell.className = 'class-cell empty';
+                        cell.innerHTML = state.isAdmin ? 'Click to add class' : 'No class';
+                    }
+                    
+                    row.appendChild(cell);
+                });
+                
+                tbody.appendChild(row);
+            });
+            
+            // Update week display
+            const weekStart = 1 + (state.currentWeek - 1) * 7;
+            const weekEnd = weekStart + 4;
+            document.getElementById('weekDisplay').textContent = `Week ${state.currentWeek}`;
+            document.getElementById('weekDisplayMain').textContent = `Week ${state.currentWeek} (Mar ${weekStart} - Mar ${weekEnd})`;
+        }
+
+        function handleCellClick(day, timeSlot) {
+            if (!state.isAdmin) return;
+            
+            openClassModal();
+            document.getElementById('classDay').value = day;
+            document.getElementById('classTimeSlot').value = timeSlot;
+        }
+
+        // Student Performance Functions
+        function loadMarksAnalytics() {
+            if (state.marks.length === 0) {
+                showEmptyMarksState();
+                return;
+            }
+            
+            // Calculate overall statistics
+            const exams = state.marks.filter(m => m.category === 'exam');
+            const assignments = state.marks.filter(m => m.category === 'assignment');
+            const quizzes = state.marks.filter(m => m.category === 'quiz');
+            
+            const overallAvg = calculateOverallAverage();
+            document.getElementById('overallAverage').textContent = `${overallAvg}%`;
+            document.getElementById('overallGrade').textContent = calculateGrade(overallAvg);
+            
+            // Exam stats
+            const examAvg = exams.length > 0 ? calculateAverage(exams) : 0;
+            document.getElementById('avgExamScore').textContent = `${examAvg}%`;
+            document.getElementById('examAverage').textContent = `${examAvg}%`;
+            document.getElementById('totalExams').textContent = exams.length;
+            document.getElementById('highestExam').textContent = exams.length > 0 ? `${Math.max(...exams.map(e => e.percentage))}%` : '0%';
+            document.getElementById('lowestExam').textContent = exams.length > 0 ? `${Math.min(...exams.map(e => e.percentage))}%` : '0%';
+            document.getElementById('examPassRate').textContent = exams.length > 0 ? `${Math.round(exams.filter(e => e.percentage >= 60).length / exams.length * 100)}%` : '0%';
+            
+            // Assignment stats
+            const assignmentAvg = assignments.length > 0 ? calculateAverage(assignments) : 0;
+            document.getElementById('avgAssignmentScore').textContent = `${assignmentAvg}%`;
+            document.getElementById('assignmentAverage').textContent = `${assignmentAvg}%`;
+            document.getElementById('totalAssignments').textContent = assignments.length;
+            document.getElementById('highestAssignment').textContent = assignments.length > 0 ? `${Math.max(...assignments.map(a => a.percentage))}%` : '0%';
+            document.getElementById('lowestAssignment').textContent = assignments.length > 0 ? `${Math.min(...assignments.map(a => a.percentage))}%` : '0%';
+            document.getElementById('assignmentCompletion').textContent = assignments.length > 0 ? `${Math.round(assignments.filter(a => a.status === 'submitted' || a.status === 'graded').length / assignments.length * 100)}%` : '0%';
+            
+            // Quiz stats
+            const quizAvg = quizzes.length > 0 ? calculateAverage(quizzes) : 0;
+            document.getElementById('avgQuizScore').textContent = `${quizAvg}%`;
+            document.getElementById('quizAverage').textContent = `${quizAvg}%`;
+            document.getElementById('totalQuizzes').textContent = quizzes.length;
+            document.getElementById('highestQuiz').textContent = quizzes.length > 0 ? `${Math.max(...quizzes.map(q => q.percentage))}%` : '0%';
+            document.getElementById('lowestQuiz').textContent = quizzes.length > 0 ? `${Math.min(...quizzes.map(q => q.percentage))}%` : '0%';
+            document.getElementById('quizAttempts').textContent = quizzes.reduce((sum, q) => sum + (q.attempts || 1), 0);
+            
+            // Update tables
+            updateMarksTable('exam', exams);
+            updateMarksTable('assignment', assignments);
+            updateMarksTable('quiz', quizzes);
+            
+            // Update subject performance
+            updateSubjectPerformance();
+        }
+
+        function calculateOverallAverage() {
+            if (state.marks.length === 0) return 0;
+            const total = state.marks.reduce((sum, mark) => sum + (mark.percentage || 0), 0);
+            return (total / state.marks.length).toFixed(1);
+        }
+
+        function updateMarksTable(type, marks) {
+            const tableId = `${type}MarksTable`;
+            const table = document.getElementById(tableId);
+            
+            if (marks.length === 0) {
+                table.innerHTML = `<tr><td colspan="${type === 'quiz' ? 9 : type === 'assignment' ? 9 : 8}" class="empty-state">No ${type} marks available</td></tr>`;
+                return;
+            }
+            
+            table.innerHTML = marks.map(mark => `
+                <tr>
+                    <td>${mark.student}</td>
+                    <td>${mark.name}</td>
+                    <td>${mark.score}</td>
+                    <td>${mark.maxScore}</td>
+                    <td><strong>${mark.percentage}%</strong></td>
+                    <td><span class="grade-badge grade-${mark.grade}">${mark.grade}</span></td>
+                    <td>${formatDate(mark.date)}</td>
+                    ${type === 'assignment' ? `<td><span class="status-badge ${mark.status}">${mark.status}</span></td>` : ''}
+                    ${type === 'quiz' ? `<td>${mark.timeTaken || 'N/A'}</td>` : ''}
+                    <td>
+                        ${state.isAdmin ? `
+                            <button class="btn btn-sm" onclick="editMarks('${mark.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteMarksRecord('${mark.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateSubjectPerformance() {
+            const container = document.getElementById('subjectPerformanceChart');
+            const objectiveMarks = state.marks.filter(m => m.subject === 'Objective Chemistry');
+            const theoreticalMarks = state.marks.filter(m => m.subject === 'Theoretical Chemistry');
+            
+            const objAvg = objectiveMarks.length > 0 ? calculateAverage(objectiveMarks) : 0;
+            const theoryAvg = theoreticalMarks.length > 0 ? calculateAverage(theoreticalMarks) : 0;
+            
+            container.innerHTML = `
+                <div class="subject-performance">
+                    <div class="subject-name">Objective Chemistry</div>
+                    <div style="flex: 1;">
+                        <div class="progress-bar">
+                            <div class="progress-fill exam" style="width: ${objAvg}%"></div>
+                        </div>
+                    </div>
+                    <div class="subject-grade">${objAvg}%</div>
+                </div>
+                <div class="subject-performance">
+                    <div class="subject-name">Theoretical Chemistry</div>
+                    <div style="flex: 1;">
+                        <div class="progress-bar">
+                            <div class="progress-fill assignment" style="width: ${theoryAvg}%"></div>
+                        </div>
+                    </div>
+                    <div class="subject-grade">${theoryAvg}%</div>
+                </div>
+            `;
+        }
+
+        function loadStudentPerformance() {
+            const students = getUniqueStudents();
+            const studentPerformance = calculateStudentPerformance(students);
+            updateStudentSummary(studentPerformance);
+            
+            if (state.studentView === 'cards') {
+                displayStudentCards(studentPerformance);
+            } else {
+                displayStudentTable(studentPerformance);
+            }
+        }
+
+        function getUniqueStudents() {
+            const students = new Set();
+            state.marks.forEach(mark => {
+                if (mark.student) {
+                    students.add(mark.student);
+                }
+            });
+            return Array.from(students);
+        }
+
+        function calculateStudentPerformance(students) {
+            const studentPerformance = [];
+            
+            students.forEach(student => {
+                const studentMarks = state.marks.filter(m => m.student === student);
+                if (studentMarks.length === 0) return;
+                
+                const overallAvg = calculateAverage(studentMarks);
+                const objectiveMarks = studentMarks.filter(m => m.subject === 'Objective Chemistry');
+                const theoreticalMarks = studentMarks.filter(m => m.subject === 'Theoretical Chemistry');
+                const examMarks = studentMarks.filter(m => m.category === 'exam');
+                const assignmentMarks = studentMarks.filter(m => m.category === 'assignment');
+                const quizMarks = studentMarks.filter(m => m.category === 'quiz');
+                
+                studentPerformance.push({
+                    name: student,
+                    overallAvg: parseFloat(overallAvg),
+                    objectiveAvg: objectiveMarks.length > 0 ? calculateAverage(objectiveMarks) : 0,
+                    theoreticalAvg: theoreticalMarks.length > 0 ? calculateAverage(theoreticalMarks) : 0,
+                    examAvg: examMarks.length > 0 ? calculateAverage(examMarks) : 0,
+                    assignmentAvg: assignmentMarks.length > 0 ? calculateAverage(assignmentMarks) : 0,
+                    quizAvg: quizMarks.length > 0 ? calculateAverage(quizMarks) : 0,
+                    totalMarks: studentMarks.length,
+                    trend: calculateImprovementTrend(studentMarks),
+                    grade: calculateGrade(overallAvg),
+                    recentMarks: studentMarks.slice(-3).reverse()
+                });
+            });
+            
+            // Sort by overall average (highest first)
+            return studentPerformance.sort((a, b) => b.overallAvg - a.overallAvg);
+        }
+
+        function calculateImprovementTrend(marks) {
+            if (marks.length < 2) return 'stable';
+            const sorted = marks.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const firstHalf = sorted.slice(0, Math.floor(sorted.length / 2));
+            const secondHalf = sorted.slice(Math.floor(sorted.length / 2));
+            
+            const firstAvg = calculateAverage(firstHalf);
+            const secondAvg = calculateAverage(secondHalf);
+            
+            if (secondAvg > firstAvg + 5) return 'up';
+            if (secondAvg < firstAvg - 5) return 'down';
+            return 'stable';
+        }
+
+        function updateStudentSummary(performance) {
+            if (performance.length === 0) {
+                document.getElementById('studentSummary').style.display = 'none';
+                return;
+            }
+            
+            const classAvg = performance.reduce((sum, s) => sum + s.overallAvg, 0) / performance.length;
+            const topPerformer = performance[0];
+            const passRate = (performance.filter(s => s.overallAvg >= 60).length / performance.length * 100).toFixed(1);
+            
+            // Find most improved (based on trend)
+            const mostImproved = performance.find(s => s.trend === 'up') || performance[0];
+            
+            document.getElementById('classAverage').textContent = `${classAvg.toFixed(1)}%`;
+            document.getElementById('totalStudents').textContent = performance.length;
+            document.getElementById('topPerformer').textContent = topPerformer.name;
+            document.getElementById('classPassRate').textContent = `${passRate}%`;
+            document.getElementById('mostImproved').textContent = mostImproved.name;
+        }
+
+        function displayStudentCards(performance) {
+            const container = document.getElementById('studentCardsView');
+            container.innerHTML = '';
+            
+            if (performance.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">👨‍🎓</div>
+                        <h3>No student data available</h3>
+                        <p>${state.isAdmin ? 'Add marks to see student performance' : 'No student performance data yet'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            performance.forEach((student, index) => {
+                const card = document.createElement('div');
+                card.className = 'student-card fade-in';
+                card.innerHTML = `
+                    <div class="student-header">
+                        <div class="student-avatar">${student.name.charAt(0)}</div>
+                        <div class="student-info">
+                            <h3>${student.name}</h3>
+                            <p>Rank: ${index + 1} | ${student.grade}</p>
+                        </div>
+                    </div>
+                    <div class="student-body">
+                        <div class="student-marks">
+                            <div class="student-mark-item">
+                                <div class="mark-info">
+                                    <h4>Overall Average</h4>
+                                    <p>All Assessments</p>
+                                </div>
+                                <div class="mark-score">
+                                    <div class="mark-percentage">${student.overallAvg}%</div>
+                                    <span class="performance-trend trend-${student.trend}">
+                                        <i class="fas fa-arrow-${student.trend === 'up' ? 'up' : student.trend === 'down' ? 'down' : 'right'}"></i>
+                                        ${student.trend}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="student-stats">
+                            <div class="student-stat">
+                                <div class="student-stat-value">${student.objectiveAvg}%</div>
+                                <div class="student-stat-label">Objective</div>
+                            </div>
+                            <div class="student-stat">
+                                <div class="student-stat-value">${student.theoreticalAvg}%</div>
+                                <div class="student-stat-label">Theoretical</div>
+                            </div>
+                            <div class="student-stat">
+                                <div class="student-stat-value">${student.examAvg}%</div>
+                                <div class="student-stat-label">Exams</div>
+                            </div>
+                            <div class="student-stat">
+                                <div class="student-stat-value">${student.assignmentAvg}%</div>
+                                <div class="student-stat-label">Assignments</div>
+                            </div>
+                        </div>
+                        ${state.isAdmin ? `
+                            <button class="btn btn-sm btn-primary" onclick="viewStudentDetails('${student.name}')" style="margin-top: 1rem; width: 100%;">
+                                <i class="fas fa-chart-line"></i> View Details
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function displayStudentTable(performance) {
+            const container = document.getElementById('studentComparisonTable');
+            container.innerHTML = '';
+            
+            if (performance.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">No student data available</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            performance.forEach((student, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="student-rank ${index < 3 ? `rank-${index + 1}` : 'rank-other'}">
+                            ${index + 1}
+                        </div>
+                    </td>
+                    <td><strong>${student.name}</strong></td>
+                    <td><strong>${student.overallAvg}%</strong></td>
+                    <td>${student.objectiveAvg}%</td>
+                    <td>${student.theoreticalAvg}%</td>
+                    <td>${student.examAvg}%</td>
+                    <td>${student.assignmentAvg}%</td>
+                    <td>${student.quizAvg}%</td>
+                    <td>
+                        <span class="performance-trend trend-${student.trend}">
+                            <i class="fas fa-arrow-${student.trend === 'up' ? 'up' : student.trend === 'down' ? 'down' : 'right'}"></i>
+                            ${student.trend}
+                        </span>
+                    </td>
+                    <td>
+                        ${state.isAdmin ? `
+                            <button class="btn btn-sm" onclick="viewStudentDetails('${student.name}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="addMarksForStudent('${student.name}')">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Chart Functions
+        function initializeTrendChart() {
+            const ctx = document.getElementById('performanceTrendChart').getContext('2d');
+            
+            if (state.performanceChart) {
+                state.performanceChart.destroy();
+            }
+            
+            // Generate sample data for demonstration
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            const objectiveData = [65, 70, 75, 72, 78, 80];
+            const theoreticalData = [60, 65, 68, 70, 72, 75];
+            const overallData = objectiveData.map((obj, i) => (obj + theoreticalData[i]) / 2);
+            
+            state.performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Objective Chemistry',
+                            data: objectiveData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Theoretical Chemistry',
+                            data: theoreticalData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Overall Average',
+                            data: overallData,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Update averages
+            const objAvg = (objectiveData.reduce((a, b) => a + b, 0) / objectiveData.length).toFixed(1);
+            const theoryAvg = (theoreticalData.reduce((a, b) => a + b, 0) / theoreticalData.length).toFixed(1);
+            const overallAvg = (overallData.reduce((a, b) => a + b, 0) / overallData.length).toFixed(1);
+            
+            document.getElementById('trendObjAvg').textContent = `${objAvg}%`;
+            document.getElementById('trendTheoryAvg').textContent = `${theoryAvg}%`;
+            document.getElementById('trendOverallAvg').textContent = `${overallAvg}%`;
+        }
+
+        function updateTrendChart(type) {
+            // This would update the chart based on the selected type
+            // For now, we'll just reinitialize
+            initializeTrendChart();
+            showNotification(`Switched to ${type} view`, 'success');
+        }
+
+        // Utility Functions
+        function calculateAverage(marks) {
+            if (!marks.length) return 0;
+            const total = marks.reduce((sum, mark) => sum + (mark.percentage || 0), 0);
+            return (total / marks.length).toFixed(1);
+        }
+
+        function calculateGrade(percentage) {
+            for (const [grade, criteria] of Object.entries(ADMIN_CONFIG.GRADING_SCALE)) {
+                if (percentage >= criteria.min) {
+                    return grade;
+                }
+            }
+            return 'F';
+        }
+
+        function calculatePercentage(score, maxScore) {
+            return ((score / maxScore) * 100).toFixed(1);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function getRandomColor() {
+            return ADMIN_CONFIG.DEFAULT_CLASS_COLORS[
+                Math.floor(Math.random() * ADMIN_CONFIG.DEFAULT_CLASS_COLORS.length)
+            ];
+        }
+
+        function showEmptyMarksState() {
+            document.getElementById('overallAverage').textContent = '0%';
+            document.getElementById('overallGrade').textContent = '-';
+            document.getElementById('avgExamScore').textContent = '0%';
+            document.getElementById('avgAssignmentScore').textContent = '0%';
+            document.getElementById('avgQuizScore').textContent = '0%';
+            
+            ['exam', 'assignment', 'quiz'].forEach(type => {
+                const table = document.getElementById(`${type}MarksTable`);
+                table.innerHTML = `<tr><td colspan="8" class="empty-state">No ${type} marks available</td></tr>`;
+            });
+            
+            document.getElementById('subjectPerformanceChart').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <h3>No performance data</h3>
+                    <p>${state.isAdmin ? 'Add marks to see analytics' : 'No analytics data available yet'}</p>
+                </div>
+            `;
+        }
+
+        // File Upload Handlers
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.size > ADMIN_CONFIG.MAX_FILE_SIZE) {
+                showNotification('File size exceeds 10MB limit', 'error');
+                return;
+            }
+            
+            state.selectedFile = file;
+            document.getElementById('fileUploadArea').style.display = 'none';
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileName').textContent = `${file.name} (${formatFileSize(file.size)})`;
+        }
+
+        function clearFile() {
+            state.selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileUploadArea').style.display = 'block';
+            document.getElementById('fileInfo').style.display = 'none';
+        }
+
+        // Modal Controls
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('adminEmail').focus();
+            // Pre-fill admin email for convenience
+            document.getElementById('adminEmail').value = ADMIN_CONFIG.EMAIL;
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('adminEmail').value = ADMIN_CONFIG.EMAIL;
+            document.getElementById('adminPassword').value = '';
+        }
+
+        function openUploadModal() {
+            if (!state.isAdmin) {
+                showLoginModal();
+                return;
+            }
+            document.getElementById('uploadModal').style.display = 'flex';
+        }
+
+        function hideUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            document.getElementById('uploadForm').reset();
+            clearFile();
+        }
+
+        function openClassModal(editId = null) {
+            if (!state.isAdmin) {
+                showLoginModal();
+                return;
+            }
+            
+            state.editingClassId = editId;
+            const form = document.getElementById('classForm');
+            
+            if (editId) {
+                const classToEdit = state.classes.find(cls => cls.id === editId);
+                if (classToEdit) {
+                    document.getElementById('classId').value = classToEdit.id;
+                    document.getElementById('classSubject').value = classToEdit.subject || '';
+                    document.getElementById('classCode').value = classToEdit.code || '';
+                    document.getElementById('classDay').value = classToEdit.day || '';
+                    document.getElementById('classTimeSlot').value = classToEdit.timeSlot || '';
+                    document.getElementById('classInstructor').value = classToEdit.instructor || '';
+                    document.getElementById('classRoom').value = classToEdit.room || '';
+                    document.getElementById('classType').value = classToEdit.type || 'Lecture';
+                    document.getElementById('classNotes').value = classToEdit.notes || '';
+                    document.getElementById('classSubmitBtn').textContent = 'Update Class';
+                    document.getElementById('deleteClassBtn').style.display = 'block';
+                }
+            } else {
+                form.reset();
+                document.getElementById('classId').value = '';
+                document.getElementById('classSubmitBtn').textContent = 'Save Class';
+                document.getElementById('deleteClassBtn').style.display = 'none';
+            }
+            
+            document.getElementById('classModal').style.display = 'flex';
+        }
+
+        function hideClassModal() {
+            document.getElementById('classModal').style.display = 'none';
+            state.editingClassId = null;
+            document.getElementById('classForm').reset();
+        }
+
+        function openMarksModal(editId = null) {
+            if (!state.isAdmin) {
+                showLoginModal();
+                return;
+            }
+            
+            state.editingMarksId = editId;
+            const form = document.getElementById('marksForm');
+            
+            if (editId) {
+                const marksToEdit = state.marks.find(m => m.id === editId);
+                if (marksToEdit) {
+                    document.getElementById('marksId').value = marksToEdit.id;
+                    document.getElementById('marksCategory').value = marksToEdit.category;
+                    document.getElementById('marksSubject').value = marksToEdit.subject;
+                    document.getElementById('marksStudent').value = marksToEdit.student || '';
+                    document.getElementById('marksName').value = marksToEdit.name;
+                    document.getElementById('marksDate').value = marksToEdit.date;
+                    document.getElementById('marksScore').value = marksToEdit.score;
+                    document.getElementById('marksMaxScore').value = marksToEdit.maxScore;
+                    document.getElementById('marksWeight').value = marksToEdit.weight || 0.1;
+                    document.getElementById('marksNotes').value = marksToEdit.notes || '';
+                    
+                    toggleMarksFields();
+                    
+                    if (marksToEdit.category === 'exam') {
+                        document.getElementById('examDuration').value = marksToEdit.duration || '';
+                        document.getElementById('examRoom').value = marksToEdit.room || '';
+                    } else if (marksToEdit.category === 'assignment') {
+                        document.getElementById('assignmentDueDate').value = marksToEdit.dueDate || marksToEdit.date;
+                        document.getElementById('assignmentStatus').value = marksToEdit.status || 'submitted';
+                    } else if (marksToEdit.category === 'quiz') {
+                        document.getElementById('quizTimeTaken').value = marksToEdit.timeTaken || '';
+                        document.getElementById('quizAttempts').value = marksToEdit.attempts || 1;
+                    }
+                    
+                    document.getElementById('marksSubmitBtn').textContent = 'Update Marks';
+                    document.getElementById('deleteMarksBtn').style.display = 'block';
+                }
+            } else {
+                form.reset();
+                document.getElementById('marksId').value = '';
+                document.getElementById('marksDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('marksSubmitBtn').textContent = 'Save Marks';
+                document.getElementById('deleteMarksBtn').style.display = 'none';
+                toggleMarksFields();
+            }
+            
+            document.getElementById('marksModal').style.display = 'flex';
+        }
+
+        function hideMarksModal() {
+            document.getElementById('marksModal').style.display = 'none';
+            state.editingMarksId = null;
+            document.getElementById('marksForm').reset();
+        }
+
+        function toggleMarksFields() {
+            const category = document.getElementById('marksCategory').value;
+            const extraFields = document.getElementById('extraFields');
+            const assessmentLabel = document.getElementById('assessmentLabel');
+            
+            if (category === 'exam') {
+                assessmentLabel.textContent = 'Exam Name *';
+                extraFields.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Duration</label>
+                            <input type="text" class="form-control" id="examDuration" placeholder="e.g., 2 hours">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Exam Room</label>
+                            <input type="text" class="form-control" id="examRoom" placeholder="e.g., Hall A">
+                        </div>
+                    </div>
+                `;
+            } else if (category === 'assignment') {
+                assessmentLabel.textContent = 'Assignment Name *';
+                extraFields.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="assignmentDueDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" id="assignmentStatus">
+                                <option value="submitted">Submitted</option>
+                                <option value="graded">Graded</option>
+                                <option value="pending">Pending</option>
+                                <option value="late">Late</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            } else if (category === 'quiz') {
+                assessmentLabel.textContent = 'Quiz Name *';
+                extraFields.innerHTML = `
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Time Taken (MM:SS)</label>
+                            <input type="text" class="form-control" id="quizTimeTaken" placeholder="e.g., 15:30">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Attempts</label>
+                            <input type="number" class="form-control" id="quizAttempts" min="1" value="1">
+                        </div>
+                    </div>
+                `;
+            } else {
+                extraFields.innerHTML = '';
+                assessmentLabel.textContent = 'Assessment Name *';
+            }
+        }
+
+        function showLoader() {
+            document.getElementById('loader').style.display = 'flex';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const id = Date.now();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.id = `notification-${id}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                const notif = document.getElementById(`notification-${id}`);
+                if (notif) {
+                    notif.style.animation = 'slideInRight 0.3s ease-out reverse';
+                    setTimeout(() => notif.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Additional UI Functions
+        function filterByCategory(category) {
+            showSection('materials');
+            document.getElementById('categoryFilter').value = category;
+            filterMaterials();
+        }
+
+        function filterBySubject(subject) {
+            showSection('materials');
+            document.getElementById('subjectFilter').value = subject;
+            filterMaterials();
+        }
+
+        function filterMaterials() {
+            const category = document.getElementById('categoryFilter').value;
+            const subject = document.getElementById('subjectFilter').value;
+            
+            let filtered = state.materials;
+            
+            if (category) {
+                filtered = filtered.filter(m => m.category === category);
+            }
+            
+            if (subject) {
+                filtered = filtered.filter(m => m.subject === subject);
+            }
+            
+            displayMaterials(filtered);
+        }
+
+        function sortMaterials() {
+            const sortBy = document.getElementById('sortFilter').value;
+            let sorted = [...state.materials];
+            
+            switch(sortBy) {
+                case 'newest':
+                    sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    break;
+                case 'oldest':
+                    sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    break;
+                case 'downloads':
+                    sorted.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+                    break;
+                case 'title':
+                    sorted.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+            }
+            
+            displayMaterials(sorted);
+        }
+
+        function changeWeek(delta) {
+            state.currentWeek += delta;
+            if (state.currentWeek < 1) state.currentWeek = 1;
+            if (state.currentWeek > 4) state.currentWeek = 4;
+            generateTimetable();
+        }
+
+        function exportTimetable() {
+            const data = {
+                week: state.currentWeek,
+                classes: state.classes,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const link = document.createElement('a');
+            link.href = dataUri;
+            link.download = `timetable-week-${state.currentWeek}.json`;
+            link.click();
+            
+            showNotification('Timetable exported successfully!', 'success');
+        }
+
+        function globalSearch(event) {
+            const query = event.target.value.toLowerCase();
+            state.searchQuery = query;
+            
+            if (!query) {
+                if (state.currentSection === 'materials') displayMaterials();
+                return;
+            }
+            
+            if (state.currentSection === 'materials') {
+                const filtered = state.materials.filter(m => 
+                    m.title.toLowerCase().includes(query) ||
+                    m.description.toLowerCase().includes(query) ||
+                    m.category.toLowerCase().includes(query) ||
+                    m.subject.toLowerCase().includes(query)
+                );
+                displayMaterials(filtered);
+            }
+        }
+
+        function toggleStudentView(view) {
+            state.studentView = view;
+            document.getElementById('studentCardsView').style.display = view === 'cards' ? 'grid' : 'none';
+            document.getElementById('studentTableView').style.display = view === 'table' ? 'block' : 'none';
+            
+            loadStudentPerformance();
+        }
+
+        function updateStudentComparison() {
+            // Filter and sort student performance based on selected filters
+            loadStudentPerformance();
+        }
+
+        function viewStudentDetails(studentName) {
+            const studentMarks = state.marks.filter(m => m.student === studentName);
+            const student = calculateStudentPerformance([studentName])[0];
+            
+            const modalContent = document.getElementById('studentDetailContent');
+            modalContent.innerHTML = `
+                <div class="student-header">
+                    <div class="student-avatar">${studentName.charAt(0)}</div>
+                    <div class="student-info">
+                        <h3>${studentName}</h3>
+                        <p>Overall Grade: <strong>${student.grade}</strong> | Average: <strong>${student.overallAvg}%</strong></p>
+                    </div>
+                </div>
+                
+                <div class="marks-stats" style="margin: 1.5rem 0;">
+                    <div class="marks-stat">
+                        <div class="marks-stat-value">${student.objectiveAvg}%</div>
+                        <div class="marks-stat-label">Objective Chemistry</div>
+                    </div>
+                    <div class="marks-stat">
+                        <div class="marks-stat-value">${student.theoreticalAvg}%</div>
+                        <div class="marks-stat-label">Theoretical Chemistry</div>
+                    </div>
+                    <div class="marks-stat">
+                        <div class="marks-stat-value">${student.examAvg}%</div>
+                        <div class="marks-stat-label">Exam Average</div>
+                    </div>
+                    <div class="marks-stat">
+                        <div class="marks-stat-value">${student.assignmentAvg}%</div>
+                        <div class="marks-stat-label">Assignment Average</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0;">Recent Assessments</h3>
+                <table class="marks-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${studentMarks.slice(0, 10).map(mark => `
+                            <tr>
+                                <td>${mark.category}</td>
+                                <td>${mark.name}</td>
+                                <td>${mark.score}/${mark.maxScore}</td>
+                                <td>${mark.percentage}%</td>
+                                <td><span class="grade-badge grade-${mark.grade}">${mark.grade}</span></td>
+                                <td>${formatDate(mark.date)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                
+                <div class="form-actions" style="margin-top: 2rem;">
+                    <button class="btn" onclick="hideStudentDetailModal()">Close</button>
+                    <button class="btn btn-primary" onclick="addMarksForStudent('${studentName}')">
+                        <i class="fas fa-plus"></i> Add New Marks
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('studentDetailModal').style.display = 'flex';
+        }
+
+        function hideStudentDetailModal() {
+            document.getElementById('studentDetailModal').style.display = 'none';
+        }
+
+        function addMarksForStudent(studentName) {
+            hideStudentDetailModal();
+            openMarksModal();
+            document.getElementById('marksStudent').value = studentName;
+        }
+
+        function exportStudentPerformance() {
+            const students = getUniqueStudents();
+            const studentPerformance = calculateStudentPerformance(students);
+            
+            const data = {
+                exportDate: new Date().toISOString(),
+                classAverage: studentPerformance.reduce((sum, s) => sum + s.overallAvg, 0) / studentPerformance.length,
+                totalStudents: students.length,
+                students: studentPerformance
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const link = document.createElement('a');
+            link.href = dataUri;
+            link.download = `student-performance-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('Student performance data exported!', 'success');
+        }
+
+        function exportTrendChart() {
+            const canvas = document.getElementById('performanceTrendChart');
+            const link = document.createElement('a');
+            link.download = 'performance-trend.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            showNotification('Chart exported as PNG!', 'success');
+        }
+
+        function previewMaterial(materialId) {
+            const material = state.materials.find(m => m.id === materialId);
+            if (material) {
+                showNotification('Preview functionality would open the file here', 'info');
+            } else {
+                showNotification('Preview not available', 'error');
+            }
+        }
+
+        function shareMaterial(materialId) {
+            const material = state.materials.find(m => m.id === materialId);
+            if (material) {
+                if (navigator.share) {
+                    navigator.share({
+                        title: material.title,
+                        text: material.description,
+                        url: window.location.href
+                    });
+                } else {
+                    navigator.clipboard.writeText(`${material.title}: ${material.description}`);
+                    showNotification('Material details copied to clipboard!', 'success');
+                }
+            }
+        }
+
+        function editMarks(marksId) {
+            openMarksModal(marksId);
+        }
+
+        function deleteMarksRecord(marksId) {
+            if (!confirm('Delete this marks record?')) return;
+            
+            // Find and delete from state
+            const index = state.marks.findIndex(m => m.id === marksId);
+            if (index !== -1) {
+                state.marks.splice(index, 1);
+                
+                // Save to localStorage
+                saveDataToLocal('chemistry_marks', state.marks);
+                
+                // Update UI
+                loadMarksAnalytics();
+                loadStudentPerformance();
+                
+                showNotification('Marks deleted!', 'success');
+            }
+        }
+
+        function loadAnalytics() {
+            // This would load additional analytics data
+            // For now, just update the basic stats
+            updateStats();
+        }
+
+        function exportStudentPerformanceData() {
+            exportStudentPerformance();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Drag and drop for file upload
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            if (fileUploadArea) {
+                fileUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.classList.add('dragover');
+                });
+                
+                fileUploadArea.addEventListener('dragleave', () => {
+                    fileUploadArea.classList.remove('dragover');
+                });
+                
+                fileUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.classList.remove('dragover');
+                    
+                    if (e.dataTransfer.files.length) {
+                        document.getElementById('fileInput').files = e.dataTransfer.files;
+                        handleFileSelect({ target: { files: e.dataTransfer.files } });
+                    }
+                });
+            }
+            
+            // Close modals on outside click
+            window.onclick = (event) => {
+                const modals = ['loginModal', 'uploadModal', 'classModal', 'marksModal', 'studentDetailModal'];
+                modals.forEach(modalId => {
+                    const modal = document.getElementById(modalId);
+                    if (event.target === modal) {
+                        if (modalId === 'loginModal') hideLoginModal();
+                        if (modalId === 'uploadModal') hideUploadModal();
+                        if (modalId === 'classModal') hideClassModal();
+                        if (modalId === 'marksModal') hideMarksModal();
+                        if (modalId === 'studentDetailModal') hideStudentDetailModal();
+                    }
+                });
+            };
+            
+            // Escape key to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideLoginModal();
+                    hideUploadModal();
+                    hideClassModal();
+                    hideMarksModal();
+                    hideStudentDetailModal();
+                }
+            });
+            
+            // Auto-login for demo (remove in production)
+            setTimeout(() => {
+                if (!state.isAuthenticated) {
+                    // Pre-fill login form for convenience
+                    showLoginModal();
+                }
+            }, 1000);
+        }
+
+        // Export functions to global scope
+        window.showSection = showSection;
+        window.logoutAdmin = logoutAdmin;
+        window.showLoginModal = showLoginModal;
+        window.hideLoginModal = hideLoginModal;
+        window.openUploadModal = openUploadModal;
+        window.hideUploadModal = hideUploadModal;
+        window.openClassModal = openClassModal;
+        window.hideClassModal = hideClassModal;
+        window.openMarksModal = openMarksModal;
+        window.hideMarksModal = hideMarksModal;
+        window.toggleMarksFields = toggleMarksFields;
+        window.saveMarks = saveMarks;
+        window.editMarks = editMarks;
+        window.deleteMarks = deleteMarks;
+        window.saveClass = saveClass;
+        window.deleteClass = deleteClass;
+        window.downloadMaterial = downloadMaterial;
+        window.previewMaterial = previewMaterial;
+        window.shareMaterial = shareMaterial;
+        window.filterByCategory = filterByCategory;
+        window.filterBySubject = filterBySubject;
+        window.filterMaterials = filterMaterials;
+        window.sortMaterials = sortMaterials;
+        window.changeWeek = changeWeek;
+        window.exportTimetable = exportTimetable;
+        window.handleFileSelect = handleFileSelect;
+        window.clearFile = clearFile;
+        window.uploadMaterial = uploadMaterial;
+        window.globalSearch = globalSearch;
+        window.toggleStudentView = toggleStudentView;
+        window.updateStudentComparison = updateStudentComparison;
+        window.viewStudentDetails = viewStudentDetails;
+        window.hideStudentDetailModal = hideStudentDetailModal;
+        window.addMarksForStudent = addMarksForStudent;
+        window.exportStudentPerformance = exportStudentPerformance;
+        window.exportStudentPerformanceData = exportStudentPerformanceData;
+        window.initializeTrendChart = initializeTrendChart;
+        window.updateTrendChart = updateTrendChart;
+        window.exportTrendChart = exportTrendChart;
+        window.loginAdmin = loginAdmin;
+        window.deleteMarksRecord = deleteMarksRecord;
+
+        // Initialize the app
+        initializeApp();
+    </script>
+</body>
+</html>
